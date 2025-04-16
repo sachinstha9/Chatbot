@@ -41,22 +41,35 @@ export default function ChatComponent(): JSX.Element {
         body: JSON.stringify({ messages: newMessages }),
       });
 
-      const data: { output?: string } = await res.json();
-      if (data.output) {
+      if (!res.ok) {
+        console.error(`API Error: ${res.status} - ${res.statusText}`);
         setMessages([
           ...newMessages,
-          { role: "assistant", content: data.output },
+          {
+            role: "assistant",
+            content: `❌ API Error: ${res.status} - ${res.statusText}`,
+          },
         ]);
       } else {
-        setMessages([
-          ...newMessages,
-          { role: "assistant", content: "Error: No output returned" },
-        ]);
+        const data: { output?: string } = await res.json();
+        if (data.output) {
+          setMessages([
+            ...newMessages,
+            { role: "assistant", content: data.output },
+          ]);
+        } else {
+          console.error("API Error: No output returned");
+          setMessages([
+            ...newMessages,
+            { role: "assistant", content: "Error: No output returned" },
+          ]);
+        }
       }
     } catch (err) {
+      console.error("Fetch Error:", err);
       setMessages([
         ...newMessages,
-        { role: "assistant", content: "❌ API Error" },
+        { role: "assistant", content: "❌ Network Error" },
       ]);
     }
 
@@ -99,6 +112,7 @@ export default function ChatComponent(): JSX.Element {
           }
           onKeyDown={handleKeyDown}
           disabled={loading}
+          aria-label="Chat input" // Added aria-label for accessibility
         />
         <button
           onClick={sendMessage}
